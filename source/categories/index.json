@@ -1,0 +1,74 @@
+{
+  "categories": [
+    {
+      "name": "Java基础",
+      "articles":[
+        {
+          "path":"",
+          "name":"1111111",
+          "isShow": false
+        }
+      ]
+    },
+    {
+      "name": "JUC",
+      "articles":[
+        {
+          "path":"",
+          "name":"1111111",
+          "isShow": false
+        }
+      ]
+    },
+    {
+      "name": "JVM",
+      "articles":[
+        {
+          "path":"",
+          "name":"1111111",
+          "isShow": false
+        }
+      ]
+    },
+    {
+      "name": "集合",
+      "articles":[
+        {
+          "path":"",
+          "name":"1111111",
+          "isShow": false
+        }
+      ]
+    },
+    {
+      "name": "ZooKeeper",
+      "articles":[
+        {
+          "path":"/2020/07/09/CentOS7安装ZooKeeper",
+          "name":"CentOS7安装ZooKeeper",
+          "isShow": true
+        }
+      ]
+    },
+    {
+      "name": "ActiveMQ",
+      "articles":[
+        {
+          "path":"",
+          "name":"1111111",
+          "isShow": false
+        }
+      ]
+    },
+    {
+      "name": "KAFKA",
+      "articles":[
+        {
+          "path":"",
+          "name":"1111111",
+          "isShow": false
+        }
+      ]
+    }
+  ]
+}
