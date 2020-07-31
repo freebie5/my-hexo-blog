@@ -9,6 +9,8 @@ tags:
 
 ## 环境准备
 
+hexo官网配置教程：https://hexo.io/zh-cn/docs/configuration
+
 安装Git
 
 安装Node.js
@@ -75,3 +77,9 @@ hexo d
 ```
 
 访问https://freebie5.github.io/
+
+## yilia作者的hexo主页
+
+http://litten.me/photos/
+
+https://github.com/litten/BlogBackup

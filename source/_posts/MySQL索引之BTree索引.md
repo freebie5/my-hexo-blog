@@ -5,6 +5,7 @@ tags:
 - MySQL
 - BTree索引
 - 索引
+- 树
 categories: MySQL相关
 ---
 

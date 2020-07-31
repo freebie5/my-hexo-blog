@@ -65,7 +65,7 @@ http://www.freebie5:9083/freebie5/services/freebie5service
 
 明白问题所在之后，我换了种调用方式，动态Axis方式，由于动态Axis方式需要指定入参名称，所以没有解析wsdl文档导致请求错误端口的问题，最终可以成功调用服务。
 
-### 5.几种WebServie客户端调用方式
+## 5.几种WebServie客户端调用方式
 
 这几种方式都是动态调用的方式
 
@@ -575,3 +575,12 @@ public class Main {
 }
 ```
 
+## 6.引用
+
+https://www.iteye.com/blog/gavin-chen-336727
+
+用于测试的在线wsdl：
+
+https://www.cnblogs.com/yuxuan/archive/2010/10/27/1862669.html
+
+http://www.webxml.com.cn/WebServices/IpAddressSearchWebService.asmx?wsdl
