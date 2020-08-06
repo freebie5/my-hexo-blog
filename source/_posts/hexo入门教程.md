@@ -1,7 +1,7 @@
 ---
 title: hexo入门教程
 date: 2017-07-18 21:33:21
-categories: hexo
+categories: 软件安装教程
 tags: 
 - 入门教程
 - hexo

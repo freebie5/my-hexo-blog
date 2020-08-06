@@ -5,7 +5,7 @@ tags:
 - MySQL
 - 哈希索引
 - 哈希表
-categories: MySQL相关
+categories: 数据库相关
 ---
 
 ## 1.哈希表

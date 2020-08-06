@@ -6,7 +6,7 @@ tags:
 - BTree索引
 - 索引
 - 树
-categories: MySQL相关
+categories: 数据库相关
 ---
 
 ## 1.从二叉排序树演化到B+Tree

@@ -3,8 +3,7 @@ title: HashMap分析总结
 date: 2020-07-28 15:43:04
 tags: 
 - HashMap
-- ConcurrentHashMap
-- 并发
+- Hashtable
 - 红黑树
 categories: 并发编程相关
 ---
@@ -225,7 +224,9 @@ put方法的执行流程如下
 
 #### JDK1.7及之前的版本
 
-put方法执行流程如下
+相比JDK1.8，JDK1.7少了判断是否为红黑树的流程，put方法执行流程如下
+
+<p><img src="/assets/blogImg/HashMap分析总结_08.png" width="600"></p>
 
 ①.判断键值对数组table是否为空数组，如果是则执行inflateTable进行初始；
 
@@ -241,13 +242,241 @@ put方法执行流程如下
 
 ### 2.5.扩容过程分析
 
-### 2.6.多线程情况下为什么会出现死循环
+#### JDK1.7及之前的版本
+
+**扩容后键值对链表的顺序都倒过来了**
+
+当键值对的数量size >= 阈值threshold，且数组索引对应位置已经被占用，将触发扩容逻辑
+
+```java
+void addEntry(int hash, K key, V value, int bucketIndex) {
+    //当键值对的数量size >= 阈值threshold，且数组索引对应位置已经被占用
+    if ((size >= threshold) && (null != table[bucketIndex])) {
+        resize(2 * table.length);
+        hash = (null != key) ? hash(key) : 0;
+        bucketIndex = indexFor(hash, table.length);
+    }
+
+    createEntry(hash, key, value, bucketIndex);
+}
+
+void resize(int newCapacity) {
+    Entry[] oldTable = table;
+    int oldCapacity = oldTable.length;
+    if (oldCapacity == MAXIMUM_CAPACITY) {
+        threshold = Integer.MAX_VALUE;
+        return;
+    }
+
+    Entry[] newTable = new Entry[newCapacity];
+    transfer(newTable, initHashSeedAsNeeded(newCapacity));
+    table = newTable;
+    threshold = (int)Math.min(newCapacity * loadFactor, MAXIMUM_CAPACITY + 1);
+}
+
+void transfer(Entry[] newTable, boolean rehash) {
+    int newCapacity = newTable.length;
+    for (Entry<K,V> e : table) {
+        while(null != e) {
+            Entry<K,V> next = e.next;
+            if (rehash) {
+                e.hash = null == e.key ? 0 : hash(e.key);
+            }
+            int i = indexFor(e.hash, newCapacity);
+            e.next = newTable[i];
+            newTable[i] = e;
+            e = next;
+        }
+    }
+}
+```
+
+举个例子方便理解
+
+假设我们的hash算法就是简单的用key mod 一下数组的长度。其中的哈希桶数组table的size=4， key = 3，7，11，15。put顺序依次为 3、7、11，15。在mod 4以后都冲突在table[3]这里了。当要插入key=15时触发了扩容条件，接下来的4个步骤是哈希桶数组 resize成8，然后所有的Node重新rehash的过程。
+
+<p><img src="/assets/blogImg/HashMap分析总结_06.png" width="800"></p>
+
+#### JDK1.8及之后的版本
+
+**扩容后不会倒置链表键值对的顺序**
+
+当键值对数量size > 阈值threshold，将触发扩容逻辑
+
+```java
+final V putVal(int hash, K key, V value, boolean onlyIfAbsent,
+                   boolean evict) {
+    ...
+    //省略上面的逻辑
+    //当键值对数量size > 阈值threshold
+    if (++size > threshold)
+        resize();
+    afterNodeInsertion(evict);
+    return null;
+}
+
+final Node<K,V>[] resize() {
+    ...
+    //省略上面的逻辑
+    if (oldTab != null) {
+        for (int j = 0; j < oldCap; ++j) {
+            Node<K,V> e;
+            if ((e = oldTab[j]) != null) {//
+                oldTab[j] = null;
+                if (e.next == null)//没有后续键值对的直接移动
+                    newTab[e.hash & (newCap - 1)] = e;
+                else if (e instanceof TreeNode)//如果是TreeNode表示这是一棵红黑树
+                    ((TreeNode<K,V>)e).split(this, newTab, j, oldCap);
+                else {//移动整个链表
+                    Node<K,V> loHead = null, loTail = null;
+                    Node<K,V> hiHead = null, hiTail = null;
+                    Node<K,V> next;
+                    do {
+                        next = e.next;
+                        //hash值小于容量的，&运算之后都会等于0
+                        //例如，key=3（二进制0011），oldCap=4（二进制1000），0011&1000=0000
+                        //hash值大于容量的，&运算之后都不会等于0
+                        //例如，key=5（二进制1001），oldCap=4（二进制1000），1001&1000=1000
+                        //loHead用来指向&运算结果不为零的键值对链表
+                        //hiHead用来指向&运算结果为零的键值对链表
+                        if ((e.hash & oldCap) == 0) {
+                            //指针loHead指向链表头节点，指针loTail指向链表尾节点
+                            if (loTail == null)
+                                loHead = e;
+                            else
+                                loTail.next = e;
+                            loTail = e;
+                        }
+                        else {//&运算之后不等于0
+                            //指针hiHead指向链表头节点，指针hiTail指向链表尾节点
+                            if (hiTail == null)
+                                hiHead = e;
+                            else
+                                hiTail.next = e;
+                            hiTail = e;
+                        }
+                    } while ((e = next) != null);
+					//经过rehash之后，原本一条链表，有可能分裂为两条链表
+                    //newTab[j]指向&运算结果为零的链表
+                    if (loTail != null) {
+                        loTail.next = null;
+                        newTab[j] = loHead;
+                    }
+                    //newTab[j]指向&运算结果不为零的链表
+                    if (hiTail != null) {
+                        hiTail.next = null;
+                        newTab[j + oldCap] = hiHead;
+                    }
+                }
+            }
+        }
+    }
+    return newTab;
+}
+```
+
+JDK1.8对扩容过程的rehash进行了优化。由于容量size是2的倍数，而且每次扩容都是把旧数组的容量扩大一倍oldCap*2，扩容时rehash算法是 **键值对的哈希值hash 和 旧数组的容量oldCap进行&运算**，所以运算结果要么是零，要么非零。
+
+比较抽象，举个例子比较好理解，假设旧数组容量oldCap=4，键值对key的哈希值hash=3，5如下图
+
+<p><img src="/assets/blogImg/HashMap分析总结_07.png" width="400"></p>
+
+根据运算结果再将原来的链表分为两个新链表，newTab[j]指向运算结果为零的链表，newTab[j+oldCap]指向运算结果非零的链表，如下图
+
+<p><img src="/assets/blogImg/HashMap分析总结_09.png" width="400"></p>
+
+### 2.6.多线程情况下HashMap为什么容易出现死循环
+
+在多线程使用场景中，应该尽量避免使用线程不安全的HashMap，而使用线程安全的ConcurrentHashMap。下面举例子说明在多线程场景中使用HashMap可能造成死循环。
+
+#### JDK1.7
+
+假设我们的hash算法就是简单的用key mod 一下数组的长度。其中的哈希桶数组table的size=4， key = 1，7，15，23。put顺序依次为 7，15，23，1。在mod 4以后都冲突在table[3]这里了。当要插入key=1时触发了扩容条件。
+
+我们在线程一设置断点，如下所示
+
+```java
+void transfer(Entry[] newTable, boolean rehash) {
+    int newCapacity = newTable.length;
+    for (Entry<K,V> e : table) {
+        while(null != e) {
+            Entry<K,V> next = e.next;//<--此处设置断点
+            if (rehash) {
+                e.hash = null == e.key ? 0 : hash(e.key);
+            }
+            int i = indexFor(e.hash, newCapacity);
+            e.next = newTable[i];
+            newTable[i] = e;
+            e = next;
+        }
+    }
+}
+```
+
+让线程二完成rehash的过程，可以得到下图的状态。**需要注意线程一的局部变量指针e指向了key=7和局部变量指针next指向了key=15**
+
+<p><img src="/assets/blogImg/HashMap分析总结_10.png" width="400"></p>
+
+执行完线程二的rehash过程之后，接着执行线程一
+
+```java
+e.next = newTable[i];//原来的newTable[7]=null，e指向key=7，执行这步使key=7的next指向了null
+newTable[i] = e;//使newTable[7]指向了key=7
+e = next;//使e指向了key=15
+```
+
+<p><img src="/assets/blogImg/HashMap分析总结_11.png" width="400"></p>
+
+线程一继续执行
+
+```java
+next = e.next;//使next指向了key=7
+e.next = newTable[i];//原来的newTable[7]指向了key=7，e指向key=15，执行这步使key=15的next指向key=7
+newTable[i] = e;//使newTable[7]指向了key=15
+e = next;//使e指向了key=7
+```
+
+<p><img src="/assets/blogImg/HashMap分析总结_12.png" width="400"></p>
+
+线程一继续执行
+
+```java
+next = e.next;//使next指向了null
+e.next = newTable[i];//原来的newTable[7]指向了key=15，e指向key=7，执行这步使key=7指向key=15
+newTable[i] = e;//使newTable[7]指向了key=7
+e = next;//使e指向了null
+//由于e=null所以没有下一轮循环
+```
+
+<p><img src="/assets/blogImg/HashMap分析总结_13.png" width="400"></p>
+
+此时出现了一个环形链表，如果我们执行HashMap的get(31)，程序就会死循环。
 
 ### 2.7.HashMap的容量为什么一定是2的n次方
 
-在HashMap中，哈希桶数组table的长度length大小必须为2的n次方，这是一种非常规的设计，常规的设计是把桶的大小设计为素数（也叫质数）。相对来说素数导致冲突的概率要小于合数（除了2以外的所有偶数都是合数）。HashMap采用这种非常规设计，主要是为了在取模和扩容时做优化，同时为了减少冲突，HashMap定位哈希桶索引位置时，也加入了高位参与运算的过程。
+在HashMap中，哈希桶数组table的长度length大小必须为2的n次方，这是一种非常规的设计，常规的设计是把桶的大小设计为素数（也叫质数）。相对来说素数导致冲突的概率要小于合数（除了2以外的所有偶数都是合数）。HashMap采用这种非常规设计，主要基于两个原因：
 
-### 2.8.HashMap和HashTable的区别
+1）取模算法，(n - 1) & hash直接&运算就可以算出键值对的哈希桶位置，比起%取模运算效率要高；
+
+2）JDK1.8扩容时rehash算法，不太好描述清楚，直接看扩容过程分析JDK1.8部分的介绍。
+
+### 2.8.HashMap和Hashtable的区别
+
+1）HashMap线程不安全（多线程场景容易出现死循环），Hashtable通过synchronized实现了线程安全；
+
+2）HashMap的key，value可以为null，Hashtable的key，value不可以为null；
+
+3）HashMap默认初始容量为16，且容量一定是2的整数次幂，且每次扩容都是容量 * 2；Hashtable默认容量为11，且每次扩容都是容量 * 2 + 1；
+
+4）继承的父类不同；
+
+5）Hashtable继承自Dictionary类，而HashMap继承自AbstractMap类。但二者都实现了Map接口；
+
+6）HashMap把Hashtable的contains方法去掉了，改成containsValue和containsKey，因为contains方法容易让人引起误解；Hashtable则保留了contains，containsValue和containsKey三个方法，其中contains和containsValue功能相同；
+
+7）Hashtable、HashMap都使用了 Iterator。而由于历史原因，Hashtable还使用了Enumeration的方式 ；
+
+8）哈希值的使用不同，HashTable直接使用对象的hashCode。而HashMap重新计算hash值。
 
 Collections.synchronizedMap
 
@@ -255,5 +484,8 @@ Collections.synchronizedMap
 
 https://tech.meituan.com/2016/06/24/java-hashmap.html
 
-https://blog.csdn.net/woshimaxiao1/article/details/83661464
+https://blog.csdn.net/xuefeng0707/article/details/40797085
 
+https://coolshell.cn/articles/9606.html
+
+https://www.cnblogs.com/williamjie/p/9099141.html

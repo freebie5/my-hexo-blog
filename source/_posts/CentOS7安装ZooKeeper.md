@@ -6,7 +6,7 @@ tags:
   - 下载安装
   - 中间件
 categories: 
-  - ZooKeeper
+  - 软件安装教程
 ---
 
 ## 下载ZooKeeper
