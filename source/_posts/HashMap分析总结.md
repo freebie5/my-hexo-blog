@@ -103,6 +103,7 @@ transient int modCount;
 #### JDK1.7及之前的版本
 
 ```java
+//其他的构造函数最后都会调用这个构造函数
 public HashMap(int initialCapacity, float loadFactor) {
     if (initialCapacity < 0)
     	throw new IllegalArgumentException("Illegal initial capacity: " + initialCapacity);
@@ -114,23 +115,24 @@ public HashMap(int initialCapacity, float loadFactor) {
     threshold = initialCapacity;
     init();//空方法，不过在其子类如LinkedHashMap中有对应实现
 }
-
-public HashMap(int initialCapacity) {
-    this(initialCapacity, DEFAULT_LOAD_FACTOR);
-}
-
-public HashMap() {
-    this(DEFAULT_INITIAL_CAPACITY, DEFAULT_LOAD_FACTOR);
-}
-
-public HashMap(Map<? extends K, ? extends V> m) {
-    this(Math.max((int) (m.size() / DEFAULT_LOAD_FACTOR) + 1, DEFAULT_INITIAL_CAPACITY), DEFAULT_LOAD_FACTOR);
-    inflateTable(threshold);
-    putAllForCreate(m);
-}
 ```
 
 #### JDK1.8及之后的版本
+
+```java
+public HashMap(int initialCapacity, float loadFactor) {
+    if (initialCapacity < 0)
+        throw new IllegalArgumentException("Illegal initial capacity: " +
+                                           initialCapacity);
+    if (initialCapacity > MAXIMUM_CAPACITY)
+        initialCapacity = MAXIMUM_CAPACITY;
+    if (loadFactor <= 0 || Float.isNaN(loadFactor))
+        throw new IllegalArgumentException("Illegal load factor: " +
+                                           loadFactor);
+    this.loadFactor = loadFactor;
+    this.threshold = tableSizeFor(initialCapacity);
+}
+```
 
 ### 2.3.如何定位key在数组中的索引位置
 
@@ -143,7 +145,7 @@ static final int hash(Object key) {
     return (key == null) ? 0 : (h = key.hashCode()) ^ (h >>> 16);
 }
 //HashMap类的其他成员方法中多次用到这段代码，用于对hash()方法返回值进行取模，定位索引位置
-//n数组的容量，2的倍数
+//n是数组的容量，2的倍数
 tab[(n - 1) & hash]
 ```
 
@@ -181,7 +183,7 @@ final int hash(Object k) {
     return h ^ (h >>> 7) ^ (h >>> 4);
 }
 //取模定位索引位置
-//length数组的容量，2的倍数
+//length是数组的容量，2的倍数
 static int indexFor(int h, int length) {
     return h & (length-1);
 }
