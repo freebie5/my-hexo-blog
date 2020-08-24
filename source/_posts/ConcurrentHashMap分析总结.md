@@ -4,7 +4,7 @@ date: 2020-08-02 21:55:14
 tags: 
 - 并发
 - 集合
-categories: 并发编程相关
+categories: Java集合相关
 ---
 
 ConcurrentHashMap从JDK1.5开始随java.util.concurrent包一起引入JDK中，主要为了解决HashMap线程不安全和Hashtable效率不高的问题。
@@ -459,7 +459,7 @@ final long sumCount() {
 }
 ```
 
-### 2.4.扩容过程分析
+### 2.5.扩容过程分析
 
 #### JDK1.7
 

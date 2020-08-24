@@ -5,7 +5,7 @@ tags:
 - HashMap
 - Hashtable
 - 红黑树
-categories: 并发编程相关
+categories: Java集合相关
 ---
 
 ## 1.底层存储结构
