@@ -17,14 +17,14 @@ ZooKeeper官网下载：http://zookeeper.apache.org/releases.html
 
 安装前需要先安装JVM
 
-```
+```shell
 tar -zvxf apache-zookeeper-3.5.7-bin.tar.gz
 cd apache-zookeeper-3.5.7-bin
 ```
 
 修改配置文件
 
-```
+```shell
 cd config
 cp zoo_sample.cfg zoo.cfg
 vi zoo.cfg
@@ -32,34 +32,34 @@ vi zoo.cfg
 
 修改如下内容：
 
-```
+```shell
 dataDir=/opt/apache-zookeeper-3.5.7-bin/dataDir
 dataLogDir=/opt/apache-zookeeper-3.5.7-bin/dataLogDir
 ```
 
 ## 启动ZooKeeper
 
-```
+```shell
 bin/zkServer.sh start conf/zoo.cfg
 bin/zkServer.sh status
 ```
 
 ## ZooKeeper客户端连接服务
 
-```
+```shell
 bin/zkCli.sh
 ```
 
 ## 配置开机启动ZooKeeper
 
-```
+```shell
 cd /etc/rc.d/init.d
 vi zookeeper.sh
 ```
 
 配置内容如下
 
-```
+```shell
 #!/bin/bash
 #chkconfig:2345 20 90
 #description:zookeeper
@@ -69,7 +69,7 @@ source /etc/profile.d/java_env.sh
 
 内容说明
 
-```
+```shell
 #!/bin/bash 声明脚本类型
 #chkconfig:2345 20 90 声明启动优先级
 #description:zookeeper 脚本描述
@@ -87,14 +87,14 @@ source /etc/profile.d/java_env.sh
 
 修改zoo.cfg配置文件
 
-```
+```shell
 cd /opt/apache-zookeeper-3.5.7-bin
 vi conf/zoo.cfg
 ```
 
 添加如下内容：
 
-```
+```shell
 server.1=192.168.1.151:2888:3888
 server.2=192.168.1.152:2888:3888
 server.3=192.168.1.153:2888:3888
@@ -102,7 +102,7 @@ server.3=192.168.1.153:2888:3888
 
 创建myid文件
 
-```
+```shell
 vi dataDir/myid
 服务器192.168.1.141的myid文件写入1
 服务器192.168.1.142的myid文件写入2
@@ -111,7 +111,7 @@ vi dataDir/myid
 
 重启各个ZooKeeper服务
 
-```
+```shell
 bin/zkServer.sh stop
 bin/zkServer.sh start
 bin/zkServer.sh status
@@ -119,7 +119,7 @@ bin/zkServer.sh status
 
 如果配置成功可以看到如下内容
 
-```
+```shell
 192.168.1.153
 ZooKeeper JMX enabled by default
 Using config: /opt/apache-zookeeper-3.5.7-bin/bin/../conf/zoo.cfg
@@ -141,6 +141,6 @@ Mode: follower
 
 使用zkCli.sh测试
 
-```
+```shell
 bin/zkCli.sh -server 192.168.1.151:2181
 ```

@@ -7,21 +7,19 @@ tags:
 categories: 网络相关
 ---
 
-## http
-
-### http报文
+## http报文
 
 用于http协议交互的信息被称为**http报文**。客户端的http报文叫做**请求报文**，服务器的http报文叫做**响应报文**。http报文本身是由**多行数据**构成的**字符串文本**。
 
 请求报文结构，如下图所示
 
-<p><img src="/assets/blogImg/http详解_01.png" width="500"></p>
+<p><img src="/assets/blogImg/http详解_01.png" width="400"></p>
 
 响应报文结构，如下图所示
 
-<p><img src="/assets/blogImg/http详解_02.png" width="500"></p>
+<p><img src="/assets/blogImg/http详解_02.png" width="400"></p>
 
-### http状态码
+## http状态码
 
 **状态码**的职责是当客户端向服务器发送请求时，描述返回的请求结果。借助状态码，用户可以知道服务器端是否正常处理了请求，还是出现了错误。
 
@@ -35,7 +33,19 @@ categories: 网络相关
 | 4XX  | Client Error（客户端错误状态）   | 服务器无法处理请求         | 表明客户端是发生错误的原因所在                               |
 | 5XX  | Server Error（服务器错误状态码） | 服务器处理请求出错         | 表明服务器本身发生错误                                       |
 
-### http缺点
+## http首部
+
+在客户端和服务器之间的http协议进行通信的过程中，无论是请求还是响应都会使用首部字段，它能起到传递**额外重要信息**的作用。
+
+http首部由多个**首部字段**组成，首部字段由**字段名**和**字段值**构成，中间用冒号分隔。例如：
+
+Content-Type:text/html
+
+字段值可以有多个，例如：
+
+Keep-Alive:timeout=15,max=100
+
+## http缺点
 
 1）通信使用明文（不加密），内容有可能会被**窃听**；
 
@@ -43,33 +53,40 @@ categories: 网络相关
 
 3）无法证明报文的完整性，所以有可能已遭**篡改**。
 
-### https
+## 什么是https
 
+简单讲，http + 加密 + 认证 + 完整性保护 = https。其中，加密为了解决窃听问题，认证为了解决伪装问题，完整性保护为了解决篡改问题。
 
+https不是应用层的一种新协议。http**通信接口**使用**SSL（Secure Socket Layer）协议**或**TLS（Transport Layer Security）协议**代替。通常，http直接和TCP通信，当使用https时，则先和SSL通信，再由SSL和TCP通信。
 
-## URI和URL
+<p><img src="/assets/blogImg/http详解_03.png" width="400"></p>
 
-URI（Uniform Resource Identifier）统一资源标识符，是一个紧凑的字符串用来标识抽象或物理资源。
+SSL最初由网景通信公司率先倡导，开发过SSL3.0之前的版本。目前主导权已经移交到IETF，IETF以SSL3.0为基准，指定了TLS1.0，TLS1.1和TLS1.2。由于TLS是以SSL为原型开发的协议，所以统一称为SSL。
 
-URL（Uniform Resource Locator）统一资源定位符，是URI的子集，除了确定一个资源，还提供一种定位该资源的访问机制。
+## https工作流程
 
-下面就来看看例子吧，这些例子都是摘自权威的RFC：
+<p><img src="/assets/blogImg/http详解_04.png" width="1000"></p>
 
-- `ftp://ftp.is.co.za/rfc/rfc1808.txt` (also a URL because of the protocol)
-- `http://www.ietf.org/rfc/rfc2396.txt` (also a URL because of the protocol)
-- `ldap://[2001:db8::7]/c=GB?objectClass?one` (also a URL because of the protocol)
-- `mailto:John.Doe@example.com` (also a URL because of the protocol)
-- `news:comp.infosystems.www.servers.unix` (also a URL because of the protocol)
-- `tel:+1-816-555-1212`
-- `telnet://192.0.2.16:80/` (also a URL because of the protocol)
-- `urn:oasis:names:specification:docbook:dtd:xml:4.1.2`
+1.Client发起一个HTTPS（比如，https://juejin.im/user/5a9a9cdcf265da238b7d771c ）的请求，根据RFC2818的规定，Client知道需要连接Server的443（默认）端口。
 
-这些全都是URI, 其中有些URI同时也是URL。哪些? 就是那些提供了访问机制的。
+2.Server把事先配置好的公钥证书（public key certificate）返回给客户端。
 
-参考：https://www.cnblogs.com/hust-ghtao/p/4724885.html
+3.Client验证公钥证书：比如是否在有效期内，证书的用途是不是匹配Client请求的站点，是不是在CRL吊销列表里面，它的上一级证书是否有效，这是一个递归的过程，直到验证到根证书（操作系统内置的Root证书或者Client内置的Root证书）。如果验证通过则继续，不通过则显示警告信息。
+
+4.Client使用伪随机数生成器生成加密所使用的对称密钥，然后用证书的公钥加密这个对称密钥，发给Server。
+
+5.Server使用自己的私钥（private key）解密这个消息，得到对称密钥。至此，Client和Server双方都持有了相同的对称密钥。
+
+6.Server使用对称密钥加密“明文内容A”，发送给Client。
+
+7.Client使用对称密钥解密响应的密文，得到“明文内容A”。
+
+8.Client再次发起HTTPS的请求，使用对称密钥加密请求的“明文内容B”，然后Server使用对称密钥解密密文，得到“明文内容B”。
 
 ## 引用
 
 https://blog.csdn.net/hj7jay/article/details/80221060
 
 https://zhuanlan.zhihu.com/p/27395037
+
+《图解HTTP》 上野 宣
