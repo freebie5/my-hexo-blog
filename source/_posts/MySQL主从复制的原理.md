@@ -1,0 +1,67 @@
+---
+title: MySQL主从复制的原理
+date: 2020-10-29 23:42:53
+tags: 
+- 主从复制
+- MySQL
+categories: 数据库相关
+---
+
+## 1.为什么需要主从复制？
+
+1、在业务复杂的系统中，有这么一个情景，有一句sql语句需要锁表，导致暂时不能使用读的服务，那么就很影响运行中的业务，使用主从复制，让主库负责写，从库负责读，这样，即使主库出现了锁表的情景，通过读从库也可以保证业务的正常运作。
+
+2、做数据的热备
+
+3、架构的扩展。业务量越来越大，I/O访问频率过高，单机无法满足，此时做多库的存储，降低磁盘I/O访问的频率，提高单个机器的I/O性能。
+
+## 2.什么是MySQL的主从复制？
+
+MySQL主从复制是指数据可以从一个MySQL数据库服务器主节点复制到一个或多个从节点。MySQL默认采用异步复制方式，这样从节点不用一直访问主服务器来更新自己的数据，数据的更新可以在远程连接上进行，从节点可以复制主数据库中的所有数据库，或者特定的数据库，或者特定的表。
+
+## 3.MySQL复制原理
+
+（1）master服务器将数据的改变记录在二进制binlog日志，当master上的数据发生改变时，则将其改变写入二进制binlog日志中；
+
+（2）slave服务器会在一定时间间隔内对master二进制binlog日志进行探测其是否发生改变，如果发生改变，则开始一个I/O线程请求master二进制事件；
+
+（3）同时主节点为每个I/O线程启动一个dump线程，用于向其发送二进制事件，并保存至从节点本地的中继日志中，从节点将启动SQL线程从中继日志中读取二进制日志，在本地重放，使得其数据和主节点的保持一致，最后I/O Thread和SQL Thread将进入睡眠状态，等待下一次被唤醒。
+
+### 也就是说
+
+- 从库会生成两个线程：一个I/O线程，一个SQL线程；
+- I/O线程会去请求主库的binlog,并将得到的binlog写到本地的relay-log(中继日志)文件中；
+- 主库会生成一个log dump线程，用来给从库I/O线程传binlog；
+- SQL线程，会读取relay log文件中的日志，并解析成sql语句逐一执行；
+
+### 注意
+
+1）master将操作语句记录到binlog日志中，然后授予slave远程连接的权限（master一定要开启binlog二进制日志功能；通常为了数据安全考虑，slave也开启binlog功能）；
+
+2）slave开启两个线程：IO线程和SQL线程。其中：IO线程负责读取master的binlog内容到中继日志relay log里；SQL线程负责从relay log日志里读出binlog内容，并更新到slave的数据库里，这样就能保证slave数据和master数据保持一致了；
+
+3）MySQL主从复制至少需要两个MySQL的服务，当然MySQL服务可以分布在不同的服务器上，也可以在一台服务器上启动多个服务；
+
+4）MySQL主从复制最好确保master和slave服务器上的MySQL版本相同（如果不能满足版本一致，那么要保证master主节点的版本低于slave从节点的版本）；
+
+5）master和slave两节点的时间需同步。
+
+<p><img src="/assets/blogImg/MySQL主从复制的原理_01.png" width="500"></p>
+
+### 具体步骤
+
+1）从库通过手工执行change master to 语句连接主库，提供了连接的用户一切条件（user 、password、port、ip），并且让从库知道，二进制日志的起点位置（file名 position 号）； start slave
+
+2）从库的IO线程和主库的dump线程建立连接。
+
+3）从库根据change master to 语句提供的file名和position号，IO线程向主库发起binlog的请求。
+
+4）主库dump线程根据从库的请求，将本地binlog以events的方式发给从库IO线程。
+
+5）从库IO线程接收binlog events，并存放到本地relay-log中，传送过来的信息，会记录到**master.info**中
+
+6）从库SQL线程应用relay-log，并且把应用过的记录到**relay-log.info**中，默认情况下，已经应用过的relay 会自动被清理purge
+
+## 引用
+
+https://zhuanlan.zhihu.com/p/96212530
