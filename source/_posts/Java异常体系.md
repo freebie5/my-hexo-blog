@@ -6,7 +6,7 @@ tags:
 categories: Java基础
 ---
 
-<p><img src="/assets/blogImg/Java异常体系_01.png" width="500"></p>
+<p><img src="/assets/blogImg/Java异常体系_01.png" width="800"></p>
 
 ## Throwable 类
 
@@ -40,11 +40,11 @@ Exception 异常主要分为两类：
 
 ### 常见的受查异常
 
-<p><img src="/assets/blogImg/Java异常体系_02.png" width="500"></p>
+<p><img src="/assets/blogImg/Java异常体系_02.png" width="800"></p>
 
 ### 常见的非受查异常
 
-<p><img src="/assets/blogImg/Java异常体系_03.png" width="500"></p>
+<p><img src="/assets/blogImg/Java异常体系_03.png" width="800"></p>
 
 ## 自定义异常
 

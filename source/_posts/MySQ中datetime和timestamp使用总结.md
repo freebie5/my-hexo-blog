@@ -44,7 +44,7 @@ ON UPDATE CURRENT_TIMESTAMP
 
 在使用Navicat工具创建表时，可以指定**默认值**和**根据当前时间戳更新**从而指定。
 
-<p><img src="/assets/blogImg/MySQ中datetime和timestamp使用总结_01.png" width="500"></p>
+<p><img src="/assets/blogImg/MySQ中datetime和timestamp使用总结_01.png" width="800"></p>
 
 使用下面的建表语句创建两个表进行测试
 
